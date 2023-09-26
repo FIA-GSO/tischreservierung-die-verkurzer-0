@@ -7,6 +7,6 @@ app.config["DEBUG"] = True  # Zeigt Fehlerinformationen im Browser, statt nur ei
 
 @app.route('/', methods=['GET'])
 def home():
-    return "<h1>Tischreservierung</h1>"
+    return "<h1>Tischreservierung hier</h1>"
 
 app.run()
