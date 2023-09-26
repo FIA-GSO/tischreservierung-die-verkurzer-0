@@ -5,8 +5,6 @@ Erste Schritte für die Entwicklung einer API mit Flask. [Flask](https://flask.p
 Nützliche Links:
 - [Erste Schritte mit Flask](https://programminghistorian.org/en/lessons/creating-apis-with-python-and-flask#implementing-our-api)
 
-fff
-
 ## Auszug aus dem Lastenheft
 Ein Restaurant möchte ein Buchungssystem für die Reservierung von Tischen einführen. Das Restaurant hat eine Filiale mit 20 Tischen. 
 
