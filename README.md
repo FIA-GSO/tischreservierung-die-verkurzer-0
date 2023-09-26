@@ -37,4 +37,30 @@ Das nachfolgende UML-Use-Case Diagramm zeigt die Anwendungsfälle, die das neue 
 Die Abfolge der Nachrichtenflüsse soll in einem UML-Sequenzdiagramm dargestellt werden:
 ![UML-Sequence Diagramm](diagramme/UML-Sequence.drawio.svg)
 
+```mermaid
+sequenceDiagram
+    actor Gast
+    participant Buch as Buchungssystem 
+    actor Kellner
+    
+    critical Freie Tische anfragen
+        Gast->>+Buch: Anfrage nach nach Tischen für Uhrzeit
+        Buch-->>-Gast: Rückgabe mit freien Tischen
+    end
+        
+        alt Tische sind Frei
+        Gast->>+Buch: Reservierung von Tisch
+        Buch-->>-Gast: Rückgabe mit Erfolgsbestätigen
+        end
+        alt Gast will stonieren
+        Gast->>+Buch: Stonierung eines Tisches
+        Buch-->>-Gast: Rückgabe mit Erfolgsbestätigen
+        end
+        Kellner->>+Buch: Anfrage nach allen Reservierungen
+        Buch-->>-Kellner: Rückgabe mit allen Reservierung
+        
+        alt Gast hat Tisch Reserviert
+        Kellner->>+Gast: Führt Gast zum Tisch
+        end
+```
 
