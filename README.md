@@ -63,10 +63,10 @@ sequenceDiagram
     critical Alle Reservierungen einsehen
         Kellner->>+Buch: Anfrage nach allen Reservierungen
         Buch-->>-Kellner: Rückgabe mit allen Reservierung
+    end
         
         alt Gast hat Tisch Reserviert
         Kellner->>+Gast: Führt Gast zum Tisch
         end
-    end
 ```
 
