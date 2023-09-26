@@ -47,20 +47,26 @@ sequenceDiagram
         Gast->>+Buch: Anfrage nach nach Tischen für Uhrzeit
         Buch-->>-Gast: Rückgabe mit freien Tischen
     end
-        
+    critical Tische Reservieren
         alt Tische sind Frei
         Gast->>+Buch: Reservierung von Tisch
         Buch-->>-Gast: Rückgabe mit Erfolgsbestätigen
         end
+    end
+    
+    critical Reservierung Stonieren
         alt Gast will stonieren
         Gast->>+Buch: Stonierung eines Tisches
         Buch-->>-Gast: Rückgabe mit Erfolgsbestätigen
         end
+    end
+    critical Alle Reservierungen einsehen
         Kellner->>+Buch: Anfrage nach allen Reservierungen
         Buch-->>-Kellner: Rückgabe mit allen Reservierung
         
         alt Gast hat Tisch Reserviert
         Kellner->>+Gast: Führt Gast zum Tisch
         end
+    end
 ```
 
