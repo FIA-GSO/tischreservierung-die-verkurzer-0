@@ -4,11 +4,12 @@ import flask
 from flask import request   # wird benötigt, um die HTTP-Parameter abzufragen
 from flask import jsonify   # übersetzt python-dicts in json
 from flask import Response
-from datetime import datetime
 
 
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True  # Zeigt Fehlerinformationen im Browser, statt nur einer generischen Error-Message
+from db import init_db, query_db
+init_db()
 
 
 def root_dir():
@@ -23,11 +24,8 @@ def get_file(filename):  # pragma: no cover
         return str(exc)
 
 
-def parse_date_string(date_string, date_format):
-    try:
-        return datetime.strptime(date_string, date_format)
-    except ValueError:
-        return None
+def datify(date):
+    return date.replace('--', ' ')
 
 
 @app.route('/', methods=['GET'])
@@ -35,31 +33,23 @@ def metrics():  # pragma: no cover
     content = get_file('index.html')
     return Response(content, mimetype="text/html")
 
-from db import init_db, query_db
-
-init_db()
 
 @app.route('/getTables', methods=['GET'])
 def get_tables():
-    date_format = "%Y-%m-%d-%H:%M:%S"
+    date_format = "year-month-day--hour:minute:seconds"
     args = request.args
-    fromTime = args.get('from')
-    toTime = args.get('to')
-    if fromTime and toTime:
-        parsed_date1 = parse_date_string(fromTime, date_format)
-        parsed_date2 = parse_date_string(toTime, date_format)
-        if parsed_date1 and parsed_date2:
-            formatted_date1 = parsed_date1.strftime(date_format)
-            formatted_date2 = parsed_date2.strftime(date_format)
-            return Response('from: ' + formatted_date1 + ' to: ' + formatted_date2)
-        else:
-            return Response("Fehler beim Parsen des Datums.")
+    date_time = args.get('time')
+
+    if date_time:
+            results = query_db("SELECT tischnummer AS Tisch FROM reservierungen WHERE reservierungen.zeitpunkt not like '" + datify(date_time) + "'")
+            return jsonify(results)
     else:
-        return Response(' ? from="%Y-%m-%d-%H:%M:%S & to="%Y-%m-%d-%H:%M:%S müssen definiert sein')
+        return Response(' ? time= format: ' + date_format + ' muss definiert sein')
+
 
 @app.route('/getReservierungen', methods=['GET'])
 def get_reservierungen():
-    results = query_db( "SELECT * FROM reservierungen")
+    results = query_db("SELECT * FROM reservierungen")
     return jsonify(results)
 
 
