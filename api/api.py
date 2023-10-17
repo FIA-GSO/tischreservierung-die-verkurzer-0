@@ -1,13 +1,16 @@
 import os
 
 import flask
-import sqlite3
 from flask import request   # wird benötigt, um die HTTP-Parameter abzufragen
 from flask import jsonify   # übersetzt python-dicts in json
 from flask import Response
+from datetime import datetime
+import db
+
 
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True  # Zeigt Fehlerinformationen im Browser, statt nur einer generischen Error-Message
+db.init_app(app)
 
 
 def root_dir():
@@ -22,6 +25,13 @@ def get_file(filename):  # pragma: no cover
         return str(exc)
 
 
+def parse_date_string(date_string, date_format):
+    try:
+        return datetime.strptime(date_string, date_format)
+    except ValueError:
+        return None
+
+
 @app.route('/', methods=['GET'])
 def metrics():  # pragma: no cover
     content = get_file('index.html')
@@ -29,4 +39,22 @@ def metrics():  # pragma: no cover
 
 from db import init_db
 init_db()
+
+@app.route('/getTables', methods=['GET'])
+def get_tables():
+    date_format = "%Y-%m-%d-%H:%M:%S"
+    args = request.args
+    fromTime = args.get('from')
+    toTime = args.get('to')
+    if fromTime and toTime:
+        parsed_date1 = parse_date_string(fromTime, date_format)
+        parsed_date2 = parse_date_string(toTime, date_format)
+        if parsed_date1 and parsed_date2:
+            formatted_date1 = parsed_date1.strftime(date_format)
+            formatted_date2 = parsed_date2.strftime(date_format)
+            return Response('from: ' + formatted_date1 + ' to: ' + formatted_date2)
+        else:
+            return Response("Fehler beim Parsen des Datums.")
+
+
 app.run()
