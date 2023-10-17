@@ -5,12 +5,10 @@ from flask import request   # wird benötigt, um die HTTP-Parameter abzufragen
 from flask import jsonify   # übersetzt python-dicts in json
 from flask import Response
 from datetime import datetime
-import db
 
 
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True  # Zeigt Fehlerinformationen im Browser, statt nur einer generischen Error-Message
-db.init_app(app)
 
 
 def root_dir():
@@ -37,7 +35,8 @@ def metrics():  # pragma: no cover
     content = get_file('index.html')
     return Response(content, mimetype="text/html")
 
-from db import init_db
+from db import init_db, query_db
+
 init_db()
 
 @app.route('/getTables', methods=['GET'])
@@ -55,6 +54,11 @@ def get_tables():
             return Response('from: ' + formatted_date1 + ' to: ' + formatted_date2)
         else:
             return Response("Fehler beim Parsen des Datums.")
+
+@app.route('/getReservierungen', methods=['GET'])
+def get_reservierungen():
+    results = query_db( "SELECT * FROM reservierungen")
+    return jsonify(results)
 
 
 app.run()
