@@ -1,6 +1,7 @@
 import os
 
 import flask
+import sqlite3
 from flask import request   # wird benötigt, um die HTTP-Parameter abzufragen
 from flask import jsonify   # übersetzt python-dicts in json
 from flask import Response
@@ -24,5 +25,6 @@ def metrics():  # pragma: no cover
     content = get_file('index.html')
     return Response(content, mimetype="text/html")
 
-
+import db
+db.init_app(app)
 app.run()
