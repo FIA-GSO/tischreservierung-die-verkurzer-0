@@ -9,6 +9,7 @@ from flask import Response
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True  # Zeigt Fehlerinformationen im Browser, statt nur einer generischen Error-Message
 
+
 def root_dir():
     return os.path.abspath(os.path.dirname(__file__))
 
@@ -19,6 +20,7 @@ def get_file(filename):  # pragma: no cover
         return open(src).read()
     except IOError as exc:
         return str(exc)
+
 
 @app.route('/', methods=['GET'])
 def metrics():  # pragma: no cover
