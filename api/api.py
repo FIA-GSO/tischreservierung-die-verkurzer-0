@@ -27,6 +27,6 @@ def metrics():  # pragma: no cover
     content = get_file('index.html')
     return Response(content, mimetype="text/html")
 
-import db
-db.init_app(app)
+from db import init_db
+init_db()
 app.run()
