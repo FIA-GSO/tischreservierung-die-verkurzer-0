@@ -54,6 +54,8 @@ def get_tables():
             return Response('from: ' + formatted_date1 + ' to: ' + formatted_date2)
         else:
             return Response("Fehler beim Parsen des Datums.")
+    else:
+        return Response(' ? from="%Y-%m-%d-%H:%M:%S & to="%Y-%m-%d-%H:%M:%S müssen definiert sein')
 
 @app.route('/getReservierungen', methods=['GET'])
 def get_reservierungen():
