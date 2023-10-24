@@ -18,6 +18,7 @@ CREATE TABLE tische(
 CREATE TABLE reservierungen(
     reservierungsnummer          INTEGER NOT NULL UNIQUE
 ,   zeitpunkt   TEXT
+,   dauerMin   INTEGER
 ,   tischnummer     INTEGER
 ,   pin         INTEGER
 ,   storniert   BOOLEAN NOT NULL CHECK (storniert IN ('True', 'False')) -- SQLite unterstützt keine Boolschen Werte, aber
@@ -30,13 +31,15 @@ INSERT INTO tische (tischnummer, anzahlPlaetze) VALUES
 ,   (2, 6)
 ,   (3, 6)
 ,   (4, 5)
+,   (5, 6)
+,   (6, 5)
 ;
 
-INSERT INTO reservierungen (reservierungsnummer, zeitpunkt, tischnummer, pin, storniert) VALUES
-    (1, '2022-02-02 17:30:00', 1, 1331, 'False') -- PIN wurde garantiert zufällig erzeugt...
-,   (2, '2022-02-02 18:30:00', 1, 1332, 'False')
-,   (3, '2022-02-02 19:30:00', 1, 1333, 'False')
-,   (4, '2022-02-02 18:30:00', 3, 1334, 'False')
-,   (5, '2022-02-02 19:30:00', 3, 1335, 'False')
-,   (6, '2022-02-02 20:30:00', 3, 1336, 'False')
+INSERT INTO reservierungen (reservierungsnummer, zeitpunkt, tischnummer, dauerMin, pin, storniert) VALUES
+    (1, '2022-02-02 17:30:00', 1, 60, 1331, 'False') -- PIN wurde garantiert zufällig erzeugt...
+,   (2, '2022-02-02 18:30:00', 1, 30, 1332, 'False')
+,   (3, '2022-02-02 19:30:00', 1, 120, 1333, 'False')
+,   (4, '2022-02-02 18:30:00', 3, 50, 1334, 'False')
+,   (5, '2022-02-02 19:30:00', 3, 80, 1335, 'False')
+,   (6, '2022-02-02 20:30:00', 3, 20, 1336, 'False')
 ;
