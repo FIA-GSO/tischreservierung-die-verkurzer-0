@@ -59,6 +59,16 @@ def get_reservierungen():
     return jsonify(results)
 
 
+@app.route('/stornierungReservierung', methods=['PATCH'])
+def storno_reservierung():
+    reqNumber = request.json
+    results = query_db("UPDATE reservierungen SET storniert = TRUE WHERE reservierungsnummer = '" + reqNumber + "'")
+    return jsonify(results)
+
+
+
+
+
 def is_colliding(start_date_time, end_date_time, reservierung):
     start_time = datetime.strptime(start_date_time, date_format)
     end_time = datetime.strptime(end_date_time, date_format)
@@ -100,10 +110,12 @@ def get_free_tables():
         def isNotReserved(tischnummer):
             return not tischnummer in wertespeicherReservierteTischnummern
 
-        # freienTische = ziehe alle kollidierenden Tischnummern von allTische ab
         freiTische = list(filter(isNotReserved, allTische))
+        # freienTische = ziehe alle kollidierenden Tischnummern von allTische ab
         # return freienTische
+
         return (jsonify(freiTische))
+
     else:
         return Response('Error: Jeweils Start und End Zeit müssen gegeben sein')
 
