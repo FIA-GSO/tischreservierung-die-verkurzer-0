@@ -61,8 +61,8 @@ def get_reservierungen():
 
 @app.route('/stornierungReservierung', methods=['PATCH'])
 def storno_reservierung():
-    reqNumber = request.json
-    results = query_db("UPDATE reservierungen SET storniert = TRUE WHERE reservierungsnummer = '" + reqNumber + "'")
+    reservierungsnummer = request.json.reservierungsnummer
+    results = query_db("UPDATE reservierungen SET storniert = TRUE WHERE reservierungsnummer = '" + reservierungsnummer + "'")
     return jsonify(results)
 
 
