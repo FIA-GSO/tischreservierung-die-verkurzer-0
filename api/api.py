@@ -61,8 +61,8 @@ def get_reservierungen():
 
 @app.route('/stornierungReservierung', methods=['PATCH'])
 def storno_reservierung():
-    reqNumber = request.json
-    results = query_db("UPDATE reservierungen SET storniert = TRUE WHERE reservierungsnummer = '" + reqNumber + "'")
+    reservierungsnummer = request.json.reservierungsnummer
+    results = query_db("UPDATE reservierungen SET storniert = TRUE WHERE reservierungsnummer = '" + reservierungsnummer + "'")
     return jsonify(results)
 
 
@@ -144,9 +144,9 @@ def add_reservation():
     reservation_details = request.json
 
     # Validate and extract necessary details from reservation_details
-    # Example: table_number = reservation_details.get('table_number')
 
     if valid_reservation_details(reservation_details):  # You need to implement this validation function
+        table_number = reservation_details.get('table_number')
         # Query to insert the new reservation into the database
         query_db("INSERT INTO reservierungen (tischnummer, zeitpunkt, ...) VALUES (?, ?, ...)", (table_number, ...))
         return Response('New reservation added', status=201)
