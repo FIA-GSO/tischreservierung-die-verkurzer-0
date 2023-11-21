@@ -34,7 +34,7 @@ def metrics():  # pragma: no cover
     return Response(content, mimetype="text/html")
 
 
-@app.route('/getTables', methods=['GET'])
+@app.route('/tables', methods=['GET'])
 def get_tables():
     date_format = "year-month-day--hour:minute:seconds"
     args = request.args
@@ -53,20 +53,17 @@ date_format = "%Y-%m-%d--%H:%M:%S"
 date_format_db = "%Y-%m-%d %H:%M:%S"
 
 
-@app.route('/getReservierungen', methods=['GET'])
+@app.route('/reservierungen', methods=['GET'])
 def get_reservierungen():
     results = query_db("SELECT * FROM reservierungen")
     return jsonify(results)
 
 
-@app.route('/stornierungReservierung', methods=['PATCH'])
+@app.route('/reservierungen', methods=['PATCH'])
 def storno_reservierung():
     reservierungsnummer = request.json.reservierungsnummer
     results = query_db("UPDATE reservierungen SET storniert = TRUE WHERE reservierungsnummer = '" + reservierungsnummer + "'")
     return jsonify(results)
-
-
-
 
 
 def is_colliding(start_date_time, end_date_time, reservierung):
@@ -76,7 +73,8 @@ def is_colliding(start_date_time, end_date_time, reservierung):
     res_end = res_start + timedelta(minutes=reservierung.get('dauerMin'))
     return not (start_time < res_start and start_time < res_end and end_time < res_start and end_time < res_end) or (start_time > res_start and start_time > res_end and end_time > res_start and end_time > res_end)
 
-@app.route('/getFreeTables', methods=['GET'])
+
+@app.route('/free-tables', methods=['GET'])
 def get_free_tables():
     args = request.args
     start_date_time = args.get('start_time')
