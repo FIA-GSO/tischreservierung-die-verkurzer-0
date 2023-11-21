@@ -28,6 +28,31 @@ def datify(date):
     return date.replace('--', ' ')
 
 
+def valid_reservation_details(reservation_details):
+    valids = []
+    dauer = reservation_details['dauerMin']
+    valids.append(dauer is int)
+    valids.append(dauer > 0)
+    results = query_db("SELECT * FROM reservierungen")
+    tischnummer = reservation_details['tischnummer']
+    valids.append(any(result.get('tischnummer') == tischnummer for result in results))
+    pin = reservation_details['pin']
+    valids.append(pin is int)
+    reservierungsnummer = reservation_details['reservierungsnummer']
+    valids.append(reservierungsnummer is int)
+    zeitpunkt = reservation_details['zeitpunkt']
+    valids.append(zeitpunkt is str)
+    return all(valids)
+
+
+def is_colliding(start_date_time, end_date_time, reservierung):
+    start_time = datetime.strptime(start_date_time, date_format)
+    end_time = datetime.strptime(end_date_time, date_format)
+    res_start = datetime.strptime(reservierung.get("zeitpunkt"), date_format_db)
+    res_end = res_start + timedelta(minutes=reservierung.get('dauerMin'))
+    return not (start_time < res_start and start_time < res_end and end_time < res_start and end_time < res_end) or (start_time > res_start and start_time > res_end and end_time > res_start and end_time > res_end)
+
+
 @app.route('/', methods=['GET'])
 def metrics():  # pragma: no cover
     content = get_file('index.html')
@@ -82,14 +107,6 @@ def storno_reservierung():
     return jsonify(results)
 
 
-def is_colliding(start_date_time, end_date_time, reservierung):
-    start_time = datetime.strptime(start_date_time, date_format)
-    end_time = datetime.strptime(end_date_time, date_format)
-    res_start = datetime.strptime(reservierung.get("zeitpunkt"), date_format_db)
-    res_end = res_start + timedelta(minutes=reservierung.get('dauerMin'))
-    return not (start_time < res_start and start_time < res_end and end_time < res_start and end_time < res_end) or (start_time > res_start and start_time > res_end and end_time > res_start and end_time > res_end)
-
-
 @app.route('/free-tables', methods=['GET'])
 def get_free_tables():
     args = request.args
@@ -132,23 +149,6 @@ def get_free_tables():
 
     else:
         return Response('Error: Jeweils Start und End Zeit müssen gegeben sein')
-
-
-def valid_reservation_details(reservation_details):
-    valids = []
-    dauer = reservation_details['dauerMin']
-    valids.append(dauer is int)
-    valids.append(dauer > 0)
-    results = query_db("SELECT * FROM reservierungen")
-    tischnummer = reservation_details['tischnummer']
-    valids.append(any(result.get('tischnummer') == tischnummer for result in results))
-    pin = reservation_details['pin']
-    valids.append(pin is int)
-    reservierungsnummer = reservation_details['reservierungsnummer']
-    valids.append(reservierungsnummer is int)
-    zeitpunkt = reservation_details['zeitpunkt']
-    valids.append(zeitpunkt is str)
-    return all(valids)
 
 
 app.run()
