@@ -34,7 +34,7 @@ def metrics():  # pragma: no cover
     return Response(content, mimetype="text/html")
 
 
-@app.route('/freeTables', methods=['GET'])
+@app.route('/tables', methods=['GET'])
 def get_tables():
     date_format = "year-month-day--hour:minute:seconds"
     args = request.args
@@ -59,14 +59,27 @@ def get_reservierungen():
     return jsonify(results)
 
 
-@app.route('/stornierungReservierung', methods=['PATCH'])
+@app.route('/reservations', methods=['PUT'])
+def add_reservation():
+    # Assuming details are sent as JSON in the request body
+    reservation_details = request.json
+
+    # Validate and extract necessary details from reservation_details
+
+    if valid_reservation_details(reservation_details):  # You need to implement this validation function
+        table_number = reservation_details.get('table_number')
+        # Query to insert the new reservation into the database
+        query_db("INSERT INTO reservierungen (tischnummer, zeitpunkt, ...) VALUES (?, ?, ...)", (table_number, ...))
+        return Response('New reservation added', status=201)
+    else:
+        return Response('Invalid reservation details', status=400)
+
+
+@app.route('/reservations', methods=['PATCH'])
 def storno_reservierung():
     reservierungsnummer = request.json.reservierungsnummer
     results = query_db("UPDATE reservierungen SET storniert = TRUE WHERE reservierungsnummer = '" + reservierungsnummer + "'")
     return jsonify(results)
-
-
-
 
 
 def is_colliding(start_date_time, end_date_time, reservierung):
@@ -76,7 +89,8 @@ def is_colliding(start_date_time, end_date_time, reservierung):
     res_end = res_start + timedelta(minutes=reservierung.get('dauerMin'))
     return not (start_time < res_start and start_time < res_end and end_time < res_start and end_time < res_end) or (start_time > res_start and start_time > res_end and end_time > res_start and end_time > res_end)
 
-@app.route('/getFreeTables', methods=['GET'])
+
+@app.route('/free-tables', methods=['GET'])
 def get_free_tables():
     args = request.args
     start_date_time = args.get('start_time')
@@ -135,23 +149,6 @@ def valid_reservation_details(reservation_details):
     zeitpunkt = reservation_details['zeitpunkt']
     valids.append(zeitpunkt is str)
     return all(valids)
-
-
-
-@app.route('/reservations', methods=['PUT'])
-def add_reservation():
-    # Assuming details are sent as JSON in the request body
-    reservation_details = request.json
-
-    # Validate and extract necessary details from reservation_details
-
-    if valid_reservation_details(reservation_details):  # You need to implement this validation function
-        table_number = reservation_details.get('table_number')
-        # Query to insert the new reservation into the database
-        query_db("INSERT INTO reservierungen (tischnummer, zeitpunkt, ...) VALUES (?, ?, ...)", (table_number, ...))
-        return Response('New reservation added', status=201)
-    else:
-        return Response('Invalid reservation details', status=400)
 
 
 app.run()
