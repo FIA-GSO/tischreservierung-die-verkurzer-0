@@ -59,6 +59,22 @@ def get_reservierungen():
     return jsonify(results)
 
 
+@app.route('/reservations', methods=['PUT'])
+def add_reservation():
+    # Assuming details are sent as JSON in the request body
+    reservation_details = request.json
+
+    # Validate and extract necessary details from reservation_details
+
+    if valid_reservation_details(reservation_details):  # You need to implement this validation function
+        table_number = reservation_details.get('table_number')
+        # Query to insert the new reservation into the database
+        query_db("INSERT INTO reservierungen (tischnummer, zeitpunkt, ...) VALUES (?, ?, ...)", (table_number, ...))
+        return Response('New reservation added', status=201)
+    else:
+        return Response('Invalid reservation details', status=400)
+
+
 @app.route('/reservations', methods=['PATCH'])
 def storno_reservierung():
     reservierungsnummer = request.json.reservierungsnummer
@@ -133,23 +149,6 @@ def valid_reservation_details(reservation_details):
     zeitpunkt = reservation_details['zeitpunkt']
     valids.append(zeitpunkt is str)
     return all(valids)
-
-
-
-@app.route('/reservations', methods=['PUT'])
-def add_reservation():
-    # Assuming details are sent as JSON in the request body
-    reservation_details = request.json
-
-    # Validate and extract necessary details from reservation_details
-
-    if valid_reservation_details(reservation_details):  # You need to implement this validation function
-        table_number = reservation_details.get('table_number')
-        # Query to insert the new reservation into the database
-        query_db("INSERT INTO reservierungen (tischnummer, zeitpunkt, ...) VALUES (?, ?, ...)", (table_number, ...))
-        return Response('New reservation added', status=201)
-    else:
-        return Response('Invalid reservation details', status=400)
 
 
 app.run()
