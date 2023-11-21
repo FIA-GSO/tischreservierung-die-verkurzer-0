@@ -1,22 +1,44 @@
 import os
-
-import flask
-from flask import request  # wird benötigt, um die HTTP-Parameter abzufragen
-from flask import jsonify  # übersetzt python-dicts in json
-from flask import Response
+from flask import Flask, request, jsonify, Response, send_from_directory
+from flask_swagger_ui import get_swaggerui_blueprint
 from datetime import datetime, timedelta
+from pydantic import BaseModel, field_validator
+from flask_swagger_generator.generators import Generator
+from flask_swagger_generator.utils import SecurityType, SwaggerVersion
 
-app = flask.Flask(__name__)
-app.config["DEBUG"] = True  # Zeigt Fehlerinformationen im Browser, statt nur einer generischen Error-Message
+date_format = "%Y-%m-%d--%H:%M:%S"
+
+app = Flask(__name__)
+app.config["DEBUG"] = True  # Enables detailed error messages in the browser
 
 from db import init_db, query_db
 
 init_db()
+
+generator = Generator.of(SwaggerVersion.VERSION_THREE)
+
+# Configuration for serving the Swagger file
+SWAGGER_URL = '/swagger'  # URL for exposing Swagger UI (without trailing '/')
+API_URL = '/static/swagger.yaml'  # Our Swagger document
+swagger_destination_path = './static/swagger.yaml'
+
+# Call factory function to create our blueprint
+swaggerui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,  # Swagger UI static files will be mapped to '{SWAGGER_URL}/dist/'
+    API_URL,
+    config={  # Swagger UI config overrides
+        'app_name': "Tisch Reservierung"
+    },
+)
+
+app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+
+
 def root_dir():
     return os.path.abspath(os.path.dirname(__file__))
 
 
-def get_file(filename):  # pragma: no cover
+def get_file(filename):
     try:
         src = os.path.join(root_dir(), filename)
         return open(src).read()
@@ -28,127 +50,109 @@ def datify(date):
     return date.replace('--', ' ')
 
 
-def valid_reservation_details(reservation_details):
-    valids = []
-    dauer = reservation_details['dauerMin']
-    valids.append(dauer is int)
-    valids.append(dauer > 0)
-    results = query_db("SELECT * FROM reservierungen")
-    tischnummer = reservation_details['tischnummer']
-    valids.append(any(result.get('tischnummer') == tischnummer for result in results))
-    pin = reservation_details['pin']
-    valids.append(pin is int)
-    reservierungsnummer = reservation_details['reservierungsnummer']
-    valids.append(reservierungsnummer is int)
-    zeitpunkt = reservation_details['zeitpunkt']
-    valids.append(zeitpunkt is str)
-    return all(valids)
-
-
-def is_colliding(start_date_time, end_date_time, reservierung):
-    start_time = datetime.strptime(start_date_time, date_format)
-    end_time = datetime.strptime(end_date_time, date_format)
-    res_start = datetime.strptime(reservierung.get("zeitpunkt"), date_format_db)
-    res_end = res_start + timedelta(minutes=reservierung.get('dauerMin'))
-    return not (start_time < res_start and start_time < res_end and end_time < res_start and end_time < res_end) or (start_time > res_start and start_time > res_end and end_time > res_start and end_time > res_end)
-
-
 @app.route('/', methods=['GET'])
-def metrics():  # pragma: no cover
+def metrics():
     content = get_file('index.html')
     return Response(content, mimetype="text/html")
 
 
 @app.route('/tables', methods=['GET'])
+@generator.query_parameters(parameters=[
+    {
+        "time": "2022-02-02 18:30:00",
+    }
+])
+@generator.response(status_code=200, schema={'tables': [{'tischnummer': 'Table1'}]})
 def get_tables():
-    date_format = "year-month-day--hour:minute:seconds"
     args = request.args
     date_time = args.get('time')
 
     if date_time:
+        date_time = date_time.replace('--', ' ')
         results = query_db(
             "SELECT tischnummer AS Tisch FROM reservierungen WHERE reservierungen.zeitpunkt not like '" + datify(
                 date_time) + "'")
         return jsonify(results)
     else:
-        return Response(' ? time= format: ' + date_format + ' muss definiert sein')
+        return Response(f' ? time= format: {date_format} must be defined')
 
 
-date_format = "%Y-%m-%d--%H:%M:%S"
-date_format_db = "%Y-%m-%d %H:%M:%S"
+@app.route('/free-tables', methods=['GET'])
+@generator.query_parameters(parameters=[{"start_time": "2022-02-02 17:30:00", "end_time": "2022-02-02 18:00:00"}])
+@generator.response(status_code=200, schema={'tables': [{'tischnummer': 'Table1'}]})
+def get_free_tables():
+    start_time = request.args.get('start_time')
+    end_time = request.args.get('end_time')
+
+    if start_time and end_time:
+        all_reservations = query_db("SELECT * FROM reservierungen")
+        reserved_tables = [
+            res['tischnummer'] for res in all_reservations
+            if is_colliding(start_time, end_time, res)
+        ]
+        all_tables = query_db("SELECT tischnummer FROM tische")
+        free_tables = [table['tischnummer'] for table in all_tables if table['tischnummer'] not in reserved_tables]
+        return jsonify(free_tables)
+    else:
+        return Response('Error: Both start and end times must be provided')
 
 
-@app.route('/reservations', methods=['GET'])
-def get_reservierungen():
+def is_colliding(start_date_time, end_date_time, reservation):
+    start_time = datetime.strptime(start_date_time, date_format)
+    end_time = datetime.strptime(end_date_time, date_format)
+    res_start = datetime.strptime(reservation.get("zeitpunkt"), date_format)
+    res_end = res_start + timedelta(minutes=reservation.get('dauerMin'))
+    return not (
+            start_time < res_start and start_time < res_end and end_time < res_start and end_time < res_end) or (
+            start_time > res_start and start_time > res_end and end_time > res_start and end_time > res_end)
+
+
+@app.route('/reservations', methods=['GET', 'PUT', 'POST'])
+@generator.response(status_code=200, schema={'reservations': [{'id': 1, 'timestamp': '2023-01-01 12:00:00'}]})
+def handle_reservations():
+    if request.method == 'GET':
+        return get_reservations()
+    elif request.method == 'PUT':
+        return add_reservation()
+    elif request.method == 'POST':  # More fitting would be PATCH but the swagger generation package does not support it
+        return cancel_reservation()
+
+
+generator.generate_swagger(app, destination_path=swagger_destination_path)
+
+
+def get_reservations():
     results = query_db("SELECT * FROM reservierungen")
     return jsonify(results)
 
 
-@app.route('/reservations', methods=['PUT'])
+class Reservation(BaseModel):
+    table_number: int
+    duration_minutes: int
+    pin: int
+    reservation_number: int
+    timestamp: str
+
+    @field_validator('timestamp')
+    def valid_timestamp(cls, v):
+        try:
+            datetime.strptime(v, date_format)
+            return v
+        except ValueError:
+            raise ValueError("Incorrect date format, should be YYYY-MM-DD HH:MM:SS")
+
+
 def add_reservation():
-    # Assuming details are sent as JSON in the request body
-    reservation_details = request.json
-
-    # Validate and extract necessary details from reservation_details
-
-    if valid_reservation_details(reservation_details):  # You need to implement this validation function
-        table_number = reservation_details.get('table_number')
-        # Query to insert the new reservation into the database
-        query_db("INSERT INTO reservierungen (tischnummer, zeitpunkt, ...) VALUES (?, ?, ...)", (table_number, ...))
-        return Response('New reservation added', status=201)
-    else:
-        return Response('Invalid reservation details', status=400)
+    reservation_details = Reservation(**request.json)
+    query_db("INSERT INTO reservierungen (tischnummer, zeitpunkt, ...) VALUES (?, ?, ...)",
+             (reservation_details.table_number, ...))
+    return Response('New reservation added', status=201)
 
 
-@app.route('/reservations', methods=['PATCH'])
-def storno_reservierung():
-    reservierungsnummer = request.json.reservierungsnummer
-    results = query_db("UPDATE reservierungen SET storniert = TRUE WHERE reservierungsnummer = '" + reservierungsnummer + "'")
-    return jsonify(results)
-
-
-@app.route('/free-tables', methods=['GET'])
-def get_free_tables():
-    args = request.args
-    start_date_time = args.get('start_time')
-    end_date_time = args.get('end_time')
-
-    if start_date_time and end_date_time:
-        # Error handling bei inkorektem Datum/Zeit Format
-        # get allReservierung
-        wertespeicherReservierteTischnummern = []
-        allReservierung = query_db("SELECT * FROM reservierungen")
-        # for: allReservierung iterieren
-        for reservierung in allReservierung:
-            # if: vergleichen reservierungszeitraum mit dem gegebenen; kollidiert oder kollidiert nicht
-            if is_colliding(start_date_time, end_date_time, reservierung):
-                # wenn es nicht kollidiert nichts machen
-                # wenn kollidiert: speicher tischnummer
-                wertespeicherReservierteTischnummern.append(reservierung.get('tischnummer'))
-
-        def get_tischnummer(tisch):
-            return tisch.get("tischnummer")
-
-        db_tables = query_db("SELECT tischnummer FROM tische")
-
-        # get allTische
-        allTische = list(
-            map(
-                get_tischnummer,
-                db_tables
-            )
-        )
-        def isNotReserved(tischnummer):
-            return not tischnummer in wertespeicherReservierteTischnummern
-
-        freiTische = list(filter(isNotReserved, allTische))
-        # freienTische = ziehe alle kollidierenden Tischnummern von allTische ab
-        # return freienTische
-
-        return (jsonify(freiTische))
-
-    else:
-        return Response('Error: Jeweils Start und End Zeit müssen gegeben sein')
+def cancel_reservation():
+    reservation_number = request.json.get('reservation_number')
+    query_db("UPDATE reservierungen SET storniert = TRUE WHERE reservierungsnummer = %s", (reservation_number,))
+    return Response('Reservation canceled', status=200)
 
 
 app.run()
