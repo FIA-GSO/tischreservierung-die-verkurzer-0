@@ -34,7 +34,7 @@ def metrics():  # pragma: no cover
     return Response(content, mimetype="text/html")
 
 
-@app.route('/getTables', methods=['GET'])
+@app.route('/tables', methods=['GET'])
 def get_tables():
     date_format = "year-month-day--hour:minute:seconds"
     args = request.args
