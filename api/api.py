@@ -34,7 +34,7 @@ def metrics():  # pragma: no cover
     return Response(content, mimetype="text/html")
 
 
-@app.route('/tables', methods=['GET'])
+@app.route('/getTables', methods=['GET'])
 def get_tables():
     date_format = "year-month-day--hour:minute:seconds"
     args = request.args
@@ -53,13 +53,13 @@ date_format = "%Y-%m-%d--%H:%M:%S"
 date_format_db = "%Y-%m-%d %H:%M:%S"
 
 
-@app.route('/reservierungen', methods=['GET'])
+@app.route('/reservations', methods=['GET'])
 def get_reservierungen():
     results = query_db("SELECT * FROM reservierungen")
     return jsonify(results)
 
 
-@app.route('/reservierungen', methods=['PATCH'])
+@app.route('/reservations', methods=['PATCH'])
 def storno_reservierung():
     reservierungsnummer = request.json.reservierungsnummer
     results = query_db("UPDATE reservierungen SET storniert = TRUE WHERE reservierungsnummer = '" + reservierungsnummer + "'")
@@ -93,8 +93,18 @@ def get_free_tables():
                 # wenn kollidiert: speicher tischnummer
                 wertespeicherReservierteTischnummern.append(reservierung.get('tischnummer'))
 
+        def get_tischnummer(tisch):
+            return tisch.get("tischnummer")
+
+        db_tables = query_db("SELECT tischnummer FROM tische")
+
         # get allTische
-        allTische = list(map(lambda tisch: tisch.get('tischnummer'), query_db("SELECT tischnummer FROM tische")))
+        allTische = list(
+            map(
+                get_tischnummer,
+                db_tables
+            )
+        )
         def isNotReserved(tischnummer):
             return not tischnummer in wertespeicherReservierteTischnummern
 
@@ -106,5 +116,40 @@ def get_free_tables():
 
     else:
         return Response('Error: Jeweils Start und End Zeit müssen gegeben sein')
+
+
+def valid_reservation_details(reservation_details):
+    valids = []
+    dauer = reservation_details['dauerMin']
+    valids.append(dauer is int)
+    valids.append(dauer > 0)
+    results = query_db("SELECT * FROM reservierungen")
+    tischnummer = reservation_details['tischnummer']
+    valids.append(any(result.get('tischnummer') == tischnummer for result in results))
+    pin = reservation_details['pin']
+    valids.append(pin is int)
+    reservierungsnummer = reservation_details['reservierungsnummer']
+    valids.append(reservierungsnummer is int)
+    zeitpunkt = reservation_details['zeitpunkt']
+    valids.append(zeitpunkt is str)
+    return all(valids)
+
+
+
+@app.route('/reservations', methods=['PUT'])
+def add_reservation():
+    # Assuming details are sent as JSON in the request body
+    reservation_details = request.json
+
+    # Validate and extract necessary details from reservation_details
+
+    if valid_reservation_details(reservation_details):  # You need to implement this validation function
+        table_number = reservation_details.get('table_number')
+        # Query to insert the new reservation into the database
+        query_db("INSERT INTO reservierungen (tischnummer, zeitpunkt, ...) VALUES (?, ?, ...)", (table_number, ...))
+        return Response('New reservation added', status=201)
+    else:
+        return Response('Invalid reservation details', status=400)
+
 
 app.run()
