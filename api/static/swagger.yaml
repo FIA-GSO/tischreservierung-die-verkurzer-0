@@ -1,0 +1,127 @@
+openapi: 3.0.0
+info:
+  title: Restaurant Reservation API
+  description: API for managing restaurant reservations.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+
+paths:
+  /:
+    get:
+      summary: Get the main HTML content
+      responses:
+        '200':
+          description: HTML content of the main page
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /tables:
+    get:
+      summary: Get table data based on time
+      parameters:
+        - in: query
+          name: time
+          schema:
+            type: string
+          required: true
+          description: Time filter in format year-month-day hour:minute:seconds
+      responses:
+        '200':
+          description: Table data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    Table:
+                      type: integer
+        '400':
+          description: Error message for missing time parameter
+
+  /reservations:
+    get:
+      summary: Get all reservations
+      responses:
+        '200':
+          description: List of all reservations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reservation'
+    put:
+      summary: Add a new reservation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reservation'
+      responses:
+        '201':
+          description: New reservation added
+    patch:
+      summary: Cancel a reservation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reservation_number:
+                  type: integer
+      responses:
+        '200':
+          description: Reservation canceled
+
+  /free-tables:
+    get:
+      summary: Get free tables based on time interval
+      parameters:
+        - in: query
+          name: start_time
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: end_time
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: List of free tables
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+        '400':
+          description: Error message for missing start or end time
+
+components:
+  schemas:
+    Reservation:
+      type: object
+      properties:
+        table_number:
+          type: integer
+        duration_minutes:
+          type: integer
+        pin:
+          type: integer
+        reservation_number:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
