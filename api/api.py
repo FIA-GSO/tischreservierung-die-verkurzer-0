@@ -69,7 +69,7 @@ def get_tables():
         return Response(f' ? time= format: {date_format} must be defined')
 
 
-@app.route('/free-tables', methods=['GET'])
+@app.route('/tables/free', methods=['GET'])
 def get_free_tables():
     start_time = request.args.get('start_time')
     end_time = request.args.get('end_time')
@@ -97,15 +97,14 @@ def is_colliding(start_date_time, end_date_time, reservation):
             start_time > res_start and start_time > res_end and end_time > res_start and end_time > res_end)
 
 
-@app.route('/reservations', methods=['GET', 'PUT', 'POST'])
+@app.route('/reservations', methods=['GET', 'POST', 'PATCH'])
 def handle_reservations():
     if request.method == 'GET':
         return get_reservations()
-    elif request.method == 'PUT':
+    elif request.method == 'POST':
         return add_reservation()
-    elif request.method == 'POST':  # More fitting would be PATCH but the swagger generation package does not support it
+    elif request.method == 'PATCH':
         return cancel_reservation()
-
 
 
 def get_reservations():
