@@ -1,7 +1,5 @@
 import sqlite3
-
 from flask import g
-from __main__ import app
 
 DATABASE = './TischResDB.db'
 
@@ -19,14 +17,15 @@ def get_db():
     return db
 
 
-@app.teardown_appcontext
-def close_connection(exception):
-    db = getattr(g, '_database', None)
-    if db is not None:
-        db.close()
 
 
-def init_db():
+def init_db(app):
+    @app.teardown_appcontext
+    def close_connection(exception):
+        db = getattr(g, '_database', None)
+        if db is not None:
+            db.close()
+
     with app.app_context():
         db = get_db()
         with app.open_resource('create_buchungssystem.sql', mode='r') as f:
