@@ -3,8 +3,6 @@ from flask import Flask, request, jsonify, Response, send_from_directory
 from flask_swagger_ui import get_swaggerui_blueprint
 from datetime import datetime, timedelta
 from pydantic import BaseModel, field_validator
-from flask_swagger_generator.generators import Generator
-from flask_swagger_generator.utils import SecurityType, SwaggerVersion
 
 date_format = "%Y-%m-%d--%H:%M:%S"
 
@@ -15,23 +13,12 @@ from db import init_db, query_db
 
 init_db()
 
-generator = Generator.of(SwaggerVersion.VERSION_THREE)
 
 # Configuration for serving the Swagger file
 SWAGGER_URL = '/swagger'  # URL for exposing Swagger UI (without trailing '/')
 API_URL = '/static/swagger.yaml'  # Our Swagger document
 swagger_destination_path = './static/swagger.yaml'
 
-# Call factory function to create our blueprint
-swaggerui_blueprint = get_swaggerui_blueprint(
-    SWAGGER_URL,  # Swagger UI static files will be mapped to '{SWAGGER_URL}/dist/'
-    API_URL,
-    config={  # Swagger UI config overrides
-        'app_name': "Tisch Reservierung"
-    },
-)
-
-app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
 
 def root_dir():
@@ -57,12 +44,6 @@ def metrics():
 
 
 @app.route('/tables', methods=['GET'])
-@generator.query_parameters(parameters=[
-    {
-        "time": "2022-02-02 18:30:00",
-    }
-])
-@generator.response(status_code=200, schema={'tables': [{'tischnummer': 'Table1'}]})
 def get_tables():
     args = request.args
     date_time = args.get('time')
@@ -78,8 +59,6 @@ def get_tables():
 
 
 @app.route('/free-tables', methods=['GET'])
-@generator.query_parameters(parameters=[{"start_time": "2022-02-02 17:30:00", "end_time": "2022-02-02 18:00:00"}])
-@generator.response(status_code=200, schema={'tables': [{'tischnummer': 'Table1'}]})
 def get_free_tables():
     start_time = request.args.get('start_time')
     end_time = request.args.get('end_time')
@@ -108,7 +87,6 @@ def is_colliding(start_date_time, end_date_time, reservation):
 
 
 @app.route('/reservations', methods=['GET', 'PUT', 'POST'])
-@generator.response(status_code=200, schema={'reservations': [{'id': 1, 'timestamp': '2023-01-01 12:00:00'}]})
 def handle_reservations():
     if request.method == 'GET':
         return get_reservations()
@@ -117,8 +95,6 @@ def handle_reservations():
     elif request.method == 'POST':  # More fitting would be PATCH but the swagger generation package does not support it
         return cancel_reservation()
 
-
-generator.generate_swagger(app, destination_path=swagger_destination_path)
 
 
 def get_reservations():
