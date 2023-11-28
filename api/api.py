@@ -18,6 +18,17 @@ init_db()
 SWAGGER_URL = '/swagger'  # URL for exposing Swagger UI (without trailing '/')
 API_URL = '/static/swagger.yaml'  # Our Swagger document
 swagger_destination_path = './static/swagger.yaml'
+swaggerui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,
+    API_URL,
+    config={  # Swagger UI config overrides
+        'app_name': "Tisch Reservierung"
+    }
+)
+
+# Register blueprint at URL
+# (URL must match the one given to get_swaggerui_blueprint)
+app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
 
 
