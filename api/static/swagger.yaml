@@ -29,7 +29,7 @@ paths:
           schema:
             type: string
           required: true
-          description: Time filter in format year-month-day--hour:minute:seconds
+          description: Time filter in format year-month-day hour:minute:seconds
       responses:
         '200':
           description: Table data

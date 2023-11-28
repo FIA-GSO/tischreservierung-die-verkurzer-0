@@ -4,7 +4,7 @@ from flask_swagger_ui import get_swaggerui_blueprint
 from datetime import datetime, timedelta
 from pydantic import BaseModel, field_validator
 
-date_format = "%Y-%m-%d--%H:%M:%S"
+date_format = "%Y-%m-%d %H:%M:%S"
 
 app = Flask(__name__)
 app.config["DEBUG"] = True  # Enables detailed error messages in the browser
