@@ -8,7 +8,6 @@ from db import init_db, query_db
 date_format = "%Y-%m-%d %H:%M:%S"
 
 
-
 def init_app(app):
     # Configuration for serving the Swagger file
     SWAGGER_URL = '/swagger'  # URL for exposing Swagger UI (without trailing '/')
@@ -46,17 +45,9 @@ def init_app(app):
 
     @app.route('/tables', methods=['GET'])
     def get_tables():
-        args = request.args
-        date_time = args.get('time')
-
-        if date_time:
-            date_time = date_time.replace('--', ' ')
-            results = query_db(
-                "SELECT tischnummer AS Tisch FROM reservierungen WHERE reservierungen.zeitpunkt not like '" + datify(
-                    date_time) + "'")
-            return jsonify(results)
-        else:
-            return Response(f' ? time= format: {date_format} must be defined')
+        results = query_db(
+            "SELECT tischnummer AS Tisch ,anzahlPlaetze AS Plaetze FROM tische")
+        return jsonify(results)
 
     @app.route('/tables/free', methods=['GET'])
     def get_free_tables():
