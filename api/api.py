@@ -58,7 +58,7 @@ def init_app(app):
             all_reservations = query_db("SELECT * FROM reservierungen")
             reserved_tables = [
                 res['tischnummer'] for res in all_reservations
-                if is_colliding(start_time, end_time, res)
+                if is_colliding(datify(start_time), datify(end_time), res)
             ]
             all_tables = query_db("SELECT tischnummer FROM tische")
             free_tables = [table['tischnummer'] for table in all_tables if table['tischnummer'] not in reserved_tables]
