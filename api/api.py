@@ -8,7 +8,6 @@ from db import init_db, query_db
 date_format = "%Y-%m-%d %H:%M:%S"
 
 
-
 def init_app(app):
     # Configuration for serving the Swagger file
     SWAGGER_URL = '/swagger'  # URL for exposing Swagger UI (without trailing '/')
