@@ -104,10 +104,18 @@ def init_app(app):
                 raise ValueError("Incorrect date format, should be YYYY-MM-DD HH:MM:SS")
 
     def add_reservation():
-        reservation_details = Reservation(**request.json)
-        query_db("INSERT INTO reservierungen (tischnummer, zeitpunkt, ...) VALUES (?, ?, ...)",
-                 (reservation_details.table_number, ...))
-        return Response('New reservation added', status=201)
+        try:
+            reservation_details = Reservation(**request.json)
+            query_db(
+                "INSERT INTO reservierungen (reservierungsnummer, zeitpunkt, dauerMin, tischnummer, pin, storniert) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (reservation_details.reservation_number, reservation_details.timestamp,
+                 reservation_details.duration_minutes, reservation_details.table_number, reservation_details.pin,
+                 'False'))  # Assuming new reservations are not cancelled
+
+            return Response('New reservation added', status=201)
+        except Exception as e:
+            return Response(str(e), status=400)
 
     def cancel_reservation():
         reservation_number = request.json.get('reservation_number')
