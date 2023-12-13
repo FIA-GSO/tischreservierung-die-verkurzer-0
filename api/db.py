@@ -33,8 +33,13 @@ def init_db(app):
         db.commit()
 
 
-def query_db(query, args=(), one=False):
+def query_db(query, args=(), one=False, commit = False):
+    db = get_db()
     cur = get_db().execute(query, args)
     rv = cur.fetchall()
     cur.close()
+
+    if commit:
+        db.commit()
+
     return (rv[0] if rv else None) if one else rv

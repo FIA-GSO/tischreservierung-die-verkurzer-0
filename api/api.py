@@ -111,7 +111,9 @@ def init_app(app):
                 "VALUES (?, ?, ?, ?, ?, ?)",
                 (reservation_details.reservation_number, reservation_details.timestamp,
                  reservation_details.duration_minutes, reservation_details.table_number, reservation_details.pin,
-                 'False'))  # Assuming new reservations are not cancelled
+                 'False'),
+                commit=True
+            )  # Assuming new reservations are not cancelled
 
             return Response('New reservation added', status=201)
         except Exception as e:
