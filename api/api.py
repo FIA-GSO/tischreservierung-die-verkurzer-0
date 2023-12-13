@@ -121,7 +121,8 @@ def init_app(app):
 
     def cancel_reservation():
         reservation_number = request.json.get('reservation_number')
-        query_db("UPDATE reservierungen SET storniert = TRUE WHERE reservierungsnummer = %s", (reservation_number,))
+        query_db("UPDATE reservierungen SET storniert = TRUE WHERE reservierungsnummer = %s", (reservation_number,),
+                 commit=True)
         return Response('Reservation canceled', status=200)
 
 
