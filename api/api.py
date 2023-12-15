@@ -1,11 +1,13 @@
-import os
-from flask import Flask, request, jsonify, Response, send_from_directory
-from flask_swagger_ui import get_swaggerui_blueprint
 from datetime import datetime, timedelta
+
+from flask import Flask, request, jsonify, Response
+from flask_swagger_ui import get_swaggerui_blueprint
 from pydantic import BaseModel, field_validator
+
 from db import init_db, query_db
 
 date_format = "%Y-%m-%d %H:%M:%S"
+TESTING = False
 
 
 def init_app(app):
@@ -25,23 +27,8 @@ def init_app(app):
     # (URL must match the one given to get_swaggerui_blueprint)
     app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
-    def root_dir():
-        return os.path.abspath(os.path.dirname(__file__))
-
-    def get_file(filename):
-        try:
-            src = os.path.join(root_dir(), filename)
-            return open(src).read()
-        except IOError as exc:
-            return str(exc)
-
     def datify(date):
         return date.replace('--', ' ')
-
-    @app.route('/', methods=['GET'])
-    def metrics():
-        content = get_file('index.html')
-        return Response(content, mimetype="text/html")
 
     @app.route('/tables', methods=['GET'])
     def get_tables():
@@ -64,7 +51,7 @@ def init_app(app):
             free_tables = [table['tischnummer'] for table in all_tables if table['tischnummer'] not in reserved_tables]
             return jsonify(free_tables)
         else:
-            return Response('Error: Both start and end times must be provided')
+            return Response('Error: Both start and end times must be provided'), 400
 
     def is_colliding(start_date_time, end_date_time, reservation):
         start_time = datetime.strptime(start_date_time, date_format)
@@ -81,8 +68,7 @@ def init_app(app):
             return get_reservations()
         elif request.method == 'POST':
             return add_reservation()
-        elif request.method == 'PATCH':
-            return cancel_reservation()
+        return cancel_reservation()  # This is PATCH
 
     def get_reservations():
         results = query_db("SELECT * FROM reservierungen")
@@ -112,7 +98,7 @@ def init_app(app):
                 (reservation_details.reservation_number, reservation_details.timestamp,
                  reservation_details.duration_minutes, reservation_details.table_number, reservation_details.pin,
                  'False'),
-                commit=True
+                commit=not TESTING
             )  # Assuming new reservations are not cancelled
 
             return Response('New reservation added', status=201)
@@ -121,8 +107,8 @@ def init_app(app):
 
     def cancel_reservation():
         reservation_number = request.json.get('reservation_number')
-        query_db("UPDATE reservierungen SET storniert = TRUE WHERE reservierungsnummer = %s", (reservation_number,),
-                 commit=True)
+        query_db("UPDATE reservierungen SET storniert ='True' WHERE reservierungsnummer =?", (reservation_number,),
+                 commit=not TESTING)
         return Response('Reservation canceled', status=200)
 
 
@@ -133,6 +119,6 @@ def create_app():
     return app
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     app = create_app()
     app.run()

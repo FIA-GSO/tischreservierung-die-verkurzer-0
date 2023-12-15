@@ -2,6 +2,7 @@ import sqlite3
 from flask import g
 
 DATABASE = './TischResDB.db'
+TESTING = False
 
 
 def get_db():
@@ -39,7 +40,7 @@ def query_db(query, args=(), one=False, commit = False):
     rv = cur.fetchall()
     cur.close()
 
-    if commit:
+    if commit and not TESTING:  # pragma: no cover
         db.commit()
 
     return (rv[0] if rv else None) if one else rv
