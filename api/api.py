@@ -64,7 +64,7 @@ def init_app(app):
             free_tables = [table['tischnummer'] for table in all_tables if table['tischnummer'] not in reserved_tables]
             return jsonify(free_tables)
         else:
-            return Response('Error: Both start and end times must be provided')
+            return Response('Error: Both start and end times must be provided'), 400
 
     def is_colliding(start_date_time, end_date_time, reservation):
         start_time = datetime.strptime(start_date_time, date_format)
