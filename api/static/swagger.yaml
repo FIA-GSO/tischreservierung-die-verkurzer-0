@@ -1,0 +1,177 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Tisch Reservierung API",
+    "description": "API for managing table reservations",
+    "version": "1.0.0"
+  },
+  "host": "localhost:5000",
+  "basePath": "/",
+  "schemes": ["http"],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Main Page",
+        "description": "Returns the main HTML page of the application.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/tables": {
+      "get": {
+        "summary": "Get All Tables",
+        "description": "Fetches information about all tables.",
+        "responses": {
+          "200": {
+            "description": "A list of tables",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Table"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tables/free": {
+      "get": {
+        "summary": "Get Free Tables",
+        "description": "Fetches free tables for the specified time range.",
+        "parameters": [
+          {
+            "name": "start_time",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "example": "2023-12-10 12:00:00"
+          },
+          {
+            "name": "end_time",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "example": "2023-12-10 14:00:00"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of free table numbers",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Both start and end times must be provided"
+          }
+        }
+      }
+    },
+    "/reservations": {
+      "get": {
+        "summary": "Get All Reservations",
+        "description": "Fetches all reservations.",
+        "responses": {
+          "200": {
+            "description": "A list of reservations",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Reservation"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Reservation",
+        "description": "Creates a new reservation.",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Reservation details",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Reservation"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "New reservation added"
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Cancel Reservation",
+        "description": "Cancels an existing reservation.",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Reservation number to cancel",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "reservation_number": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reservation canceled"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Table": {
+      "type": "object",
+      "properties": {
+        "Tisch": {
+          "type": "integer"
+        },
+        "Plaetze": {
+          "type": "integer"
+        }
+      }
+    },
+    "Reservation": {
+      "type": "object",
+      "properties": {
+        "table_number": {
+          "type": "integer"
+        },
+        "duration_minutes": {
+          "type": "integer"
+        },
+        "pin": {
+          "type": "integer"
+        },
+        "reservation_number": {
+          "type": "integer"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["table_number", "duration_minutes", "pin", "reservation_number", "timestamp"]
+    }
+  }
+}
