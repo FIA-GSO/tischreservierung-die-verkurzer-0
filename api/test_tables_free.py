@@ -15,3 +15,15 @@ def test_tables_get(testing_app):
     assert response.status_code == 200
 
     print(response)
+
+def test_tables_get_invalid_time(testing_app):
+    route = "/tables/free"
+    payload = {
+        "start_time": "2023-10-17--00:60:00"
+    }
+
+    response = testing_app.get(path=route, query_string=payload)
+
+    assert response.status_code != 200
+
+    print(response)
