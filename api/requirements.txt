@@ -1,1 +1,4 @@
-flask
+Flask>=3.0.0
+flask_swagger_ui==4.11.1
+pydantic==2.5.2
+pytest==7.4.3
