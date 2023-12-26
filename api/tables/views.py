@@ -1,21 +1,16 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from flask import request, jsonify, Response
 
-from ..db import query_db
-
-date_format = "%Y-%m-%d %H:%M:%S"
+from api.tables import crud
+from ..utils.dateformat import datify, request_date_format
 
 
 def init_table_routes(app):
 
-    def datify(date):
-        return date.replace('--', ' ')
-
     @app.route('/tables', methods=['GET'])
     def get_tables():
-        results = query_db(
-            "SELECT tischnummer AS Tisch ,anzahlPlaetze AS Plaetze FROM tische")
+        results = crud.read_all_tables()
         return jsonify(results)
 
     @app.route('/tables/free', methods=['GET'])
@@ -24,22 +19,15 @@ def init_table_routes(app):
         end_time = request.args.get('end_time')
 
         if start_time and end_time:
-            all_reservations = query_db("SELECT * FROM reservierungen")
-            reserved_tables = [
-                res['tischnummer'] for res in all_reservations
-                if is_colliding(datify(start_time), datify(end_time), res)
-            ]
-            all_tables = query_db("SELECT tischnummer FROM tische")
-            free_tables = [table['tischnummer'] for table in all_tables if table['tischnummer'] not in reserved_tables]
+            try:
+                datetime.strptime(start_time, request_date_format)
+                datetime.strptime(end_time, request_date_format)
+            except ValueError:
+                return Response(f"Incorrect date format, should be {request_date_format}"), 400
+
+            db_start_time = datify(start_time)
+            db_end_time = datify(end_time)
+            free_tables = crud.read_all_free_tables(db_start_time, db_end_time)
             return jsonify(free_tables)
         else:
             return Response('Error: Both start and end times must be provided'), 400
-
-    def is_colliding(start_date_time, end_date_time, reservation):
-        start_time = datetime.strptime(start_date_time, date_format)
-        end_time = datetime.strptime(end_date_time, date_format)
-        res_start = datetime.strptime(reservation.get("zeitpunkt"), date_format)
-        res_end = res_start + timedelta(minutes=reservation.get('dauerMin'))
-        return not (
-                start_time < res_start and start_time < res_end and end_time < res_start and end_time < res_end) or (
-                start_time > res_start and start_time > res_end and end_time > res_start and end_time > res_end)

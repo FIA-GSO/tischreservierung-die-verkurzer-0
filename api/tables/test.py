@@ -6,7 +6,7 @@ def test_tables_get(client):
 
     response = client.get(path=route)
 
-    assert response.get_json()[0] == {"Plaetze": 4, "Tisch": 1}
+    assert response.get_json()[0] == {"anzahlPlaetze": 4, "tischnummer": 1}
 
     assert response.status_code == 200
 
